@@ -4,7 +4,8 @@ An interval timer for isometric neck exercises. One HTML file, no dependencies, 
 
 **[Live demo →](https://igorswift.github.io/isometric-neck-trainer/)**
 
-![Isometric Neck Trainer screenshot](docs/screenshot.png)
+<img width="482" height="655" alt="image" src="https://github.com/user-attachments/assets/32d9374f-3e82-49ef-a031-b6038fcd76e5" />
+
 
 ---
 
