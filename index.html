@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Isometric Neck Trainer</title>
+<meta name="description" content="A dependency-free interval timer for isometric neck exercises. Offline-first, trilingual, no data leaves the device.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2F7FD0;--green:#5C8F1E;--red:#A32D2D;--amber:#B07213;
+  --rad:12px;--rad-sm:8px;
+  --bg:#f8f8f6;--bg2:#f0efeb;--bg3:#e6e5e0;
+  --text:#1a1a18;--text2:#56564f;--text3:#8e8e86;
+  --border:rgba(0,0,0,.13);--border2:rgba(0,0,0,.24);
+  --card:#fff;
+  --ff:'Inter',system-ui,sans-serif;--fm:'JetBrains Mono',ui-monospace,monospace;
+}
+@media(prefers-color-scheme:dark){:root{
+  --blue:#5AA0E8;--green:#8CC24C;--red:#E0736B;--amber:#D9A03F;
+  --bg:#16161a;--bg2:#1f1f24;--bg3:#2a2a30;
+  --text:#eeedea;--text2:#a3a3a0;--text3:#6c6c6a;
+  --border:rgba(255,255,255,.11);--border2:rgba(255,255,255,.22);
+  --card:#1f1f24;
+}}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--ff);display:flex;justify-content:center;padding:1.25rem 1rem 2rem;-webkit-font-smoothing:antialiased}
+.app{width:100%;max-width:480px}
+.hidden{display:none!important}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+
+/* header */
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:1.25rem}
+h1{font-size:19px;font-weight:600;letter-spacing:-.01em}
+.top-sub{font-family:var(--fm);font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5}
+.langs{display:flex;gap:3px;flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-sm);padding:3px}
+.lang{font-family:var(--fm);font-size:11px;font-weight:500;padding:5px 8px;border:none;border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;transition:.15s}
+.lang:hover{color:var(--text)}
+.lang.on{background:var(--card);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+/* stats */
+.stats-bar{display:flex;gap:8px;margin-bottom:.75rem}
+.sbox{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad);padding:.7rem .9rem}
+.sbox-l{font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+.sbox-v{font-family:var(--fm);font-size:21px;font-weight:600;margin-top:3px;line-height:1.1}
+.sbox-v small{font-size:12px;font-weight:400;color:var(--text3);margin-left:3px}
+.strip{display:flex;gap:4px;margin-top:8px}
+.sq{flex:1;height:5px;border-radius:2px;background:var(--bg3)}
+.sq.on{background:var(--green)}
+.sq.today{box-shadow:inset 0 0 0 1.5px var(--text3)}
+
+/* safety */
+.safety{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:var(--rad-sm);padding:.8rem 1rem;margin-bottom:1.25rem}
+.safety p{font-size:13px;line-height:1.6;color:var(--text2)}
+.safety b{color:var(--text);font-weight:600}
+.safety s{color:var(--red);text-decoration:none}
+
+/* setup */
+.tabs{display:flex;gap:6px;margin-bottom:1rem}
+.tab{flex:1;font-family:var(--fm);font-size:12px;padding:9px 6px;border:1px solid var(--border2);border-radius:var(--rad-sm);background:transparent;color:var(--text2);cursor:pointer;transition:.15s}
+.tab:hover{background:var(--bg3)}
+.tab.on{border-color:var(--blue);color:var(--blue);background:var(--card);font-weight:600}
+.chk{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--rad-sm)}
+.chk:hover{background:var(--bg2)}
+.chk input{accent-color:var(--blue);width:15px;height:15px;flex-shrink:0;cursor:pointer}
+.chk label{font-size:14px;cursor:pointer}
+.chk .tg{font-family:var(--fm);font-size:10px;color:var(--text3);margin-left:auto}
+.set-t{font-family:var(--fm);font-size:12px;color:var(--text2);background:none;border:none;cursor:pointer;padding:6px 0;margin:.5rem 0}
+.set-t:hover{color:var(--text)}
+.set-p{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-sm);padding:1rem;margin-bottom:1rem}
+.srow{display:flex;align-items:center;gap:10px;margin-bottom:.85rem}
+.srow>span:first-child{font-size:13px;color:var(--text2);min-width:112px}
+.srow input[type=range]{flex:1;accent-color:var(--blue)}
+.sval{font-family:var(--fm);font-size:15px;font-weight:600;min-width:28px;text-align:right}
+.scheck{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text2);margin-bottom:.6rem}
+.scheck:last-child{margin-bottom:0}
+.scheck input{accent-color:var(--blue);width:15px;height:15px}
+.go{width:100%;padding:15px;border:none;border-radius:var(--rad-sm);background:var(--blue);color:#fff;font-family:var(--fm);font-size:15px;font-weight:600;cursor:pointer}
+.go:hover{filter:brightness(1.07)}
+
+/* trainer */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:1.35rem}
+.ctop{display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem}
+.cnum{font-family:var(--fm);font-size:11px;color:var(--text3)}
+.dots{display:flex;gap:5px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--bg3);transition:.3s}
+.dot.done{background:var(--green)}.dot.act{background:var(--blue)}
+.exn{font-size:23px;font-weight:600;letter-spacing:-.01em;margin-bottom:.4rem}
+.exd{font-size:13.5px;color:var(--text2);line-height:1.65;margin-bottom:.7rem;min-height:66px}
+.exp{font-family:var(--fm);font-size:11px;color:var(--text3);margin-bottom:1rem}
+.trow{display:flex;align-items:flex-end;gap:14px;margin-bottom:.9rem}
+.tbig{font-family:var(--fm);font-size:54px;font-weight:600;line-height:.95;min-width:78px;font-variant-numeric:tabular-nums}
+.tph{font-family:var(--fm);font-size:12px;color:var(--text2);margin-bottom:5px}
+.trep{font-family:var(--fm);font-size:23px;font-weight:600;margin-left:auto;font-variant-numeric:tabular-nums}
+.treps{font-family:var(--fm);font-size:10px;color:var(--text3);text-align:right;margin-top:2px}
+.pbar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:1.05rem}
+.pfill{height:100%;border-radius:3px;transition:width 60ms linear}
+.pw{background:var(--blue)}.pr{background:var(--green)}
+.nav{display:flex;gap:6px}
+.nb{flex:1;font-family:var(--fm);font-size:12px;padding:11px 4px;border:1px solid var(--border2);border-radius:var(--rad-sm);background:transparent;color:var(--text);cursor:pointer;transition:.15s}
+.nb:hover:not(:disabled){background:var(--bg2)}
+.nb.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.nb:disabled{opacity:.32;cursor:not-allowed}
+.kbd{font-family:var(--fm);font-size:10.5px;color:var(--text3);text-align:center;margin-top:.8rem}
+.wake{display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--fm);font-size:10.5px;color:var(--text3);margin-top:.45rem}
+.wake-dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+/* done */
+.done{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:2.1rem 1.35rem;text-align:center}
+.done-i{font-size:34px;color:var(--green);line-height:1}
+.done-t{font-size:22px;font-weight:600;margin:.6rem 0 .3rem}
+.done-s{font-size:13.5px;color:var(--text2);margin-bottom:1.4rem}
+.dstats{display:flex;gap:10px;justify-content:center;margin-bottom:1.4rem}
+.dstat{background:var(--bg2);border-radius:var(--rad-sm);padding:.7rem 1.3rem}
+.dstat-v{font-family:var(--fm);font-size:22px;font-weight:600}
+.dstat-l{font-family:var(--fm);font-size:10px;color:var(--text3)}
+.dbtns{display:flex;gap:8px;justify-content:center}
+.db{font-family:var(--fm);font-size:13px;font-weight:600;padding:11px 20px;border-radius:var(--rad-sm);cursor:pointer}
+.db.pri{background:var(--blue);border:none;color:#fff}
+.db.sec{background:transparent;border:1px solid var(--border2);color:var(--text)}
+.db.sec:hover{background:var(--bg2)}
+
+/* footer */
+footer{margin-top:1.5rem;padding-top:1.1rem;border-top:1px solid var(--border);font-size:11.5px;line-height:1.65;color:var(--text3)}
+footer a{color:var(--text2)}
+.disc-toggle{background:none;border:none;font-family:var(--fm);font-size:11px;color:var(--text2);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(10,10,12,.62);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:1.25rem;z-index:50}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:1.6rem;max-width:440px;width:100%;max-height:88vh;overflow-y:auto}
+.modal-i{font-size:22px;line-height:1}
+.modal h2{font-size:19px;font-weight:600;margin:.6rem 0 .7rem}
+.modal p{font-size:13.5px;line-height:1.7;color:var(--text2);margin-bottom:.9rem}
+.modal ul{margin:0 0 1rem 1.1rem;font-size:13px;line-height:1.75;color:var(--text2)}
+.modal .go{margin-top:.3rem}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="top">
+    <div>
+      <h1 id="t-title">Isometric Neck Trainer</h1>
+      <div class="top-sub" id="t-sub">—</div>
+    </div>
+    <div class="langs" role="group" aria-label="Language">
+      <button class="lang" data-l="ru">RU</button>
+      <button class="lang" data-l="en">EN</button>
+      <button class="lang" data-l="es">ES</button>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="sbox">
+      <div class="sbox-l" id="t-streak">streak</div>
+      <div class="sbox-v"><span id="v-streak">0</span><small id="t-days">days</small></div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-l" id="t-week">last 7 days</div>
+      <div class="sbox-v"><span id="v-week">0</span><small id="t-sessions">sessions</small></div>
+      <div class="strip" id="strip"></div>
+    </div>
+  </div>
+
+  <div class="safety"><p id="t-safety">—</p></div>
+
+  <div id="setup">
+    <div class="tabs">
+      <button class="tab on" id="tab-full">full</button>
+      <button class="tab" id="tab-short">short</button>
+    </div>
+    <div id="ex-list"></div>
+    <button class="set-t" id="set-t"><span id="set-i">▸</span> <span id="t-settings">timer settings</span></button>
+    <div class="set-p hidden" id="set-p">
+      <div class="srow"><span id="t-hold">hold</span><input type="range" min="5" max="15" id="s-hold"><span class="sval" id="v-hold">10</span></div>
+      <div class="srow"><span id="t-rest">rest</span><input type="range" min="3" max="10" id="s-rest"><span class="sval" id="v-rest">4</span></div>
+      <div class="srow"><span id="t-reps">reps</span><input type="range" min="3" max="12" id="s-reps"><span class="sval" id="v-reps">6</span></div>
+      <div class="scheck"><input type="checkbox" id="s-auto"><label for="s-auto" id="t-auto">auto-advance</label></div>
+      <div class="scheck"><input type="checkbox" id="s-sound"><label for="s-sound" id="t-sound">audio cues</label></div>
+    </div>
+    <button class="go" id="btn-start">Start</button>
+  </div>
+
+  <div id="trainer" class="hidden">
+    <div class="card">
+      <div class="ctop"><span class="cnum" id="ex-num">—</span><div class="dots" id="dots"></div></div>
+      <div class="exn" id="ex-name">—</div>
+      <div class="exd" id="ex-desc">—</div>
+      <div class="exp" id="ex-par">—</div>
+      <div class="trow" aria-live="polite" aria-atomic="true">
+        <div><div class="tbig" id="t-big">—</div><div class="tph" id="t-phase">—</div></div>
+        <div style="margin-left:auto"><div class="trep" id="t-rep">—</div><div class="treps" id="t-repsl">reps</div></div>
+      </div>
+      <div class="pbar"><div class="pfill pw" id="p-fill" style="width:0%"></div></div>
+      <div class="nav">
+        <button class="nb" id="b-prev">◁</button>
+        <button class="nb pri" id="b-pause">⏸</button>
+        <button class="nb" id="b-reset">↺</button>
+        <button class="nb" id="b-next">▷</button>
+      </div>
+      <div class="kbd" id="t-hint">—</div>
+      <div class="wake hidden" id="wake"><span class="wake-dot"></span><span id="t-wake">—</span></div>
+    </div>
+  </div>
+
+  <div id="complete" class="hidden">
+    <div class="done">
+      <div class="done-i">✓</div>
+      <div class="done-t" id="t-donet">Session complete</div>
+      <div class="done-s" id="t-dones">—</div>
+      <div class="dstats">
+        <div class="dstat"><div class="dstat-v" id="c-exs">0</div><div class="dstat-l" id="t-statex">exercises</div></div>
+        <div class="dstat"><div class="dstat-v" id="c-time">0:00</div><div class="dstat-l" id="t-stattime">time</div></div>
+      </div>
+      <div class="dbtns">
+        <button class="db pri" id="b-again">Repeat</button>
+        <button class="db sec" id="b-menu">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <button class="disc-toggle" id="t-disclink">Full disclaimer</button>
+    <div style="margin-top:.5rem">Side project · vanilla JS, no dependencies, no analytics, no backend.</div>
+  </footer>
+</div>
+
+<div class="overlay hidden" id="disc" role="dialog" aria-modal="true" aria-labelledby="t-disct">
+  <div class="modal">
+    <div class="modal-i">⚕</div>
+    <h2 id="t-disct">Before you start</h2>
+    <p id="t-discb">—</p>
+    <ul id="t-discul"></ul>
+    <button class="go" id="b-disc">Continue</button>
+  </div>
+</div>
+<script>
+const I18N = {
+ru:{
+  lang:"RU", title:"Изометрика шеи", sub:"таймер-тренажёр · офлайн · без данных на сервере",
+  discTitle:"Прежде чем начать",
+  discBody:"Это учебный пет-проект, а не медицинское изделие. Он не ставит диагноз и не заменяет врача. Изометрические упражнения подходят не всем: при грыже, стенозе, травме, гипертонии, головокружении или боли сначала проконсультируйтесь с врачом или физиотерапевтом.",
+  discList:["Резкая или нарастающая боль в шее","Онемение, покалывание или слабость в руках","Головокружение, тошнота, потемнение в глазах","Недавняя травма шеи или операция","Неконтролируемое высокое давление"],
+  discAgree:"Понятно, продолжить", discLink:"Полный дисклеймер",
+  safety:"<b>Голова не двигается</b> — только мягкое давление в ладонь. Усилие 30–50%. <s>Стоп при боли, онемении, слабости или простреле в руку.</s>",
+  streak:"серия", days:"дн.", week:"за 7 дней", sessions:"сессий", todayDone:"выполнено сегодня",
+  modeFull:"полная", modeShort:"короткая",
+  settings:"настройки таймера", hold:"удержание, сек", rest:"пауза, сек", reps:"повторов",
+  autoNext:"автопереход к следующему (2 сек)", sound:"звуковые сигналы",
+  start:"Начать сессию", exOf:"упражнение {a} / {b}",
+  params:"{r} повторов × {h} сек · пауза {p} сек",
+  phWork:"держи", phRest:"пауза", phReady:"приготовься", phDone:"готово",
+  repsLabel:"повторений", pause:"пауза", resume:"продолжить", reset:"сброс",
+  doneTitle:"Сессия завершена", doneSub:"Регулярность важнее интенсивности.",
+  statEx:"упражнений", statTime:"время", again:"Ещё раз", menu:"В меню",
+  wake:"экран не гаснет",
+  hint:"Пробел — пауза · ← → переход · R — сброс",
+  ex:{
+    fwd:["Давление вперёд","Ладонь ко лбу. Дави головой вперёд — ладонь не пускает. Голова остаётся неподвижной."],
+    back:["Давление назад","Ладонь на затылке. Дави затылком назад — ладонь держит. Не запрокидывай голову."],
+    left:["Давление влево","Ладонь к левому виску. Дави головой влево — ладонь сопротивляется."],
+    right:["Давление вправо","Ладонь к правому виску. Дави головой вправо — ладонь сопротивляется."],
+    chin:["Втягивание подбородка","Мягко уведи подбородок назад, будто делаешь второй подбородок. Не наклоняй и не запрокидывай голову."]
+  },
+  onlyFull:"только в полной"
+},
+en:{
+  lang:"EN", title:"Isometric Neck Trainer", sub:"interval timer · offline · no data leaves your device",
+  discTitle:"Before you start",
+  discBody:"This is a learning side project, not a medical device. It does not diagnose anything and does not replace a clinician. Isometric neck work is not for everyone: with a disc herniation, spinal stenosis, recent injury, high blood pressure, dizziness or pain, talk to a doctor or physiotherapist first.",
+  discList:["Sharp or increasing neck pain","Numbness, tingling or weakness in the arms","Dizziness, nausea or visual disturbance","Recent neck injury or surgery","Uncontrolled high blood pressure"],
+  discAgree:"Got it, continue", discLink:"Full disclaimer",
+  safety:"<b>Your head stays still</b> — only gentle pressure into your palm. Effort 30–50%. <s>Stop on pain, numbness, weakness or shooting pain down the arm.</s>",
+  streak:"streak", days:"days", week:"last 7 days", sessions:"sessions", todayDone:"done today",
+  modeFull:"full", modeShort:"short",
+  settings:"timer settings", hold:"hold, sec", rest:"rest, sec", reps:"reps",
+  autoNext:"auto-advance to next (2 sec)", sound:"audio cues",
+  start:"Start session", exOf:"exercise {a} / {b}",
+  params:"{r} reps × {h} sec · {p} sec rest",
+  phWork:"hold", phRest:"rest", phReady:"get ready", phDone:"done",
+  repsLabel:"reps", pause:"pause", resume:"resume", reset:"reset",
+  doneTitle:"Session complete", doneSub:"Consistency beats intensity.",
+  statEx:"exercises", statTime:"time", again:"Repeat", menu:"Menu",
+  wake:"screen stays on",
+  hint:"Space — pause · ← → switch · R — reset",
+  ex:{
+    fwd:["Forward press","Palm on your forehead. Press your head forward — the palm resists. Your head stays still."],
+    back:["Backward press","Palm on the back of your head. Press backward — the palm holds. Do not tip your head back."],
+    left:["Left press","Palm on your left temple. Press your head left — the palm resists."],
+    right:["Right press","Palm on your right temple. Press your head right — the palm resists."],
+    chin:["Chin tuck","Gently draw your chin back, making a double chin. Do not tilt your head down or back."]
+  },
+  onlyFull:"full session only"
+},
+es:{
+  lang:"ES", title:"Entrenador isométrico de cuello", sub:"temporizador · sin conexión · tus datos no salen del dispositivo",
+  discTitle:"Antes de empezar",
+  discBody:"Este es un proyecto personal de aprendizaje, no un producto sanitario. No diagnostica nada ni sustituye a un profesional. El trabajo isométrico de cuello no es para todos: con hernia discal, estenosis, lesión reciente, hipertensión, mareo o dolor, consulta antes con un médico o fisioterapeuta.",
+  discList:["Dolor cervical agudo o creciente","Hormigueo, entumecimiento o debilidad en los brazos","Mareo, náuseas o alteraciones visuales","Lesión o cirugía cervical reciente","Hipertensión no controlada"],
+  discAgree:"Entendido, continuar", discLink:"Aviso completo",
+  safety:"<b>La cabeza no se mueve</b> — solo presión suave contra la palma. Esfuerzo del 30–50%. <s>Detente si hay dolor, hormigueo, debilidad o dolor irradiado al brazo.</s>",
+  streak:"racha", days:"días", week:"últimos 7 días", sessions:"sesiones", todayDone:"hecho hoy",
+  modeFull:"completa", modeShort:"corta",
+  settings:"ajustes del temporizador", hold:"sostener, seg", rest:"descanso, seg", reps:"repeticiones",
+  autoNext:"pasar al siguiente automáticamente (2 seg)", sound:"señales de audio",
+  start:"Empezar sesión", exOf:"ejercicio {a} / {b}",
+  params:"{r} repeticiones × {h} seg · descanso {p} seg",
+  phWork:"sostén", phRest:"descanso", phReady:"prepárate", phDone:"listo",
+  repsLabel:"repeticiones", pause:"pausa", resume:"seguir", reset:"reiniciar",
+  doneTitle:"Sesión completada", doneSub:"La constancia supera a la intensidad.",
+  statEx:"ejercicios", statTime:"tiempo", again:"Repetir", menu:"Menú",
+  wake:"la pantalla sigue encendida",
+  hint:"Espacio — pausa · ← → cambiar · R — reiniciar",
+  ex:{
+    fwd:["Presión frontal","Palma en la frente. Empuja la cabeza hacia delante — la palma resiste. La cabeza no se mueve."],
+    back:["Presión posterior","Palma en la nuca. Empuja la cabeza hacia atrás — la palma resiste. No eches la cabeza atrás."],
+    left:["Presión izquierda","Palma en la sien izquierda. Empuja la cabeza a la izquierda — la palma resiste."],
+    right:["Presión derecha","Palma en la sien derecha. Empuja la cabeza a la derecha — la palma resiste."],
+    chin:["Retracción del mentón","Lleva el mentón hacia atrás con suavidad, como haciendo doble mentón. No inclines la cabeza."]
+  },
+  onlyFull:"solo en sesión completa"
+}
+};
+
+</script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v===null ? d : JSON.parse(v); }catch(_){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(_){} }
+};
+
+/* ---------- state ---------- */
+const EX_IDS = ['fwd','back','left','right','chin'];
+const SHORT_SET = ['fwd','back','left','right'];
+
+let lang = LS.get('nt.lang', null) || (navigator.language||'en').slice(0,2);
+if(!['ru','en','es'].includes(lang)) lang = 'en';
+
+let cfg     = Object.assign({hold:10, rest:4, reps:6, auto:true, sound:true}, LS.get('nt.cfg', {}));
+let enabled = Object.assign(Object.fromEntries(EX_IDS.map(id=>[id,true])), LS.get('nt.enabled', {}));
+let mode    = LS.get('nt.mode','full');
+
+let queue=[], qi=0, rep=1, phase='idle', elapsed=0, paused=false, timer=null, startedAt=0;
+const TICK = 50;
+const t = () => I18N[lang];
+
+/* ---------- audio ---------- */
+let actx = null;
+function tone(freq, dur, vol){
+  if(!cfg.sound) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state === 'suspended') actx.resume();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.connect(g); g.connect(actx.destination);
+    o.frequency.value = freq; g.gain.value = vol;
+    o.start(); g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + dur);
+    o.stop(actx.currentTime + dur);
+  }catch(_){}
+}
+const cueWork = () => tone(660,.10,.15);
+const cueRest = () => tone(440,.08,.10);
+const cueDone = () => { tone(880,.08,.16); setTimeout(()=>tone(1174,.13,.16),110); };
+
+/* ---------- screen wake lock ---------- */
+let wakeLock = null;
+const sessionRunning = () =>
+  !$('trainer').classList.contains('hidden') && phase !== 'idle';
+
+function paintWake(on){
+  $('wake').classList.toggle('hidden', !on);
+}
+async function acquireWake(){
+  if(!('wakeLock' in navigator)) return;      // iOS < 16.4, Firefox on some platforms
+  if(wakeLock) return;
+  try{
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; paintWake(false); });
+    paintWake(true);
+  }catch(_){ wakeLock = null; paintWake(false); }   // denied, e.g. battery saver
+}
+async function releaseWake(){
+  const l = wakeLock; wakeLock = null; paintWake(false);
+  if(l){ try{ await l.release(); }catch(_){} }
+}
+// the browser drops the lock whenever the tab is hidden — take it back on return
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && sessionRunning()) acquireWake();
+});
+
+/* ---------- streak ---------- */
+const dayKey = d => new Date(d).toISOString().slice(0,10);
+function history(){ return LS.get('nt.history', {}); }
+function logSession(){
+  const h = history(), k = dayKey(Date.now());
+  h[k] = (h[k]||0) + 1;
+  LS.set('nt.history', h);
+  renderStats();
+}
+function renderStats(){
+  const h = history();
+  let streak = 0;
+  for(let i=0;i<400;i++){
+    const k = dayKey(Date.now() - i*864e5);
+    if(h[k]) streak++;
+    else if(i>0) break;           // today not done yet — streak still counts from yesterday
+  }
+  let week = 0;
+  const strip = $('strip'); strip.innerHTML='';
+  for(let i=6;i>=0;i--){
+    const k = dayKey(Date.now() - i*864e5);
+    week += h[k]||0;
+    const sq = document.createElement('div');
+    sq.className = 'sq' + (h[k]?' on':'') + (i===0?' today':'');
+    sq.title = k;
+    strip.appendChild(sq);
+  }
+  $('v-streak').textContent = streak;
+  $('v-week').textContent = week;
+}
+
+/* ---------- i18n render ---------- */
+function applyLang(){
+  const L = t();
+  document.documentElement.lang = lang;
+  document.querySelectorAll('.lang').forEach(b => b.classList.toggle('on', b.dataset.l === lang));
+
+  $('t-title').textContent = L.title;
+  $('t-sub').textContent   = L.sub;
+  $('t-safety').innerHTML  = L.safety;
+  $('t-streak').textContent   = L.streak;
+  $('t-days').textContent     = ' ' + L.days;
+  $('t-week').textContent     = L.week;
+  $('t-sessions').textContent = ' ' + L.sessions;
+  $('tab-full').textContent   = L.modeFull;
+  $('tab-short').textContent  = L.modeShort;
+  $('t-settings').textContent = L.settings;
+  $('t-hold').textContent = L.hold;
+  $('t-rest').textContent = L.rest;
+  $('t-reps').textContent = L.reps;
+  $('t-auto').textContent = L.autoNext;
+  $('t-sound').textContent = L.sound;
+  $('btn-start').textContent = L.start;
+  $('t-repsl').textContent = L.repsLabel;
+  $('t-hint').textContent  = L.hint;
+  $('t-wake').textContent  = L.wake;
+  $('t-donet').textContent = L.doneTitle;
+  $('t-dones').textContent = L.doneSub;
+  $('t-statex').textContent = L.statEx;
+  $('t-stattime').textContent = L.statTime;
+  $('b-again').textContent = L.again;
+  $('b-menu').textContent  = L.menu;
+  $('t-disclink').textContent = L.discLink;
+  $('t-disct').textContent = L.discTitle;
+  $('t-discb').textContent = L.discBody;
+  $('t-discul').innerHTML  = L.discList.map(x=>`<li>${x}</li>`).join('');
+  $('b-disc').textContent  = L.discAgree;
+  $('b-pause').textContent = paused ? '▶' : '⏸';
+
+  buildExList();
+  if(queue.length) renderExercise();
+}
+
+/* ---------- setup ---------- */
+function buildExList(){
+  const box = $('ex-list'); box.innerHTML = '';
+  EX_IDS.forEach(id => {
+    const [name] = t().ex[id];
+    const isShortEx = SHORT_SET.includes(id);
+    const row = document.createElement('div');
+    row.className = 'chk';
+    row.innerHTML =
+      `<input type="checkbox" id="k-${id}" ${enabled[id]?'checked':''} ${mode==='short'&&!isShortEx?'disabled':''}>` +
+      `<label for="k-${id}">${name}</label>` +
+      (isShortEx ? '' : `<span class="tg">${t().onlyFull}</span>`);
+    row.querySelector('input').addEventListener('change', e => {
+      enabled[id] = e.target.checked;
+      LS.set('nt.enabled', enabled);
+      $('btn-start').disabled = !EX_IDS.some(x=>enabled[x]);
+    });
+    box.appendChild(row);
+  });
+  $('btn-start').disabled = !EX_IDS.some(x=>enabled[x]);
+}
+function setMode(m){
+  mode = m; LS.set('nt.mode', m);
+  $('tab-full').classList.toggle('on', m==='full');
+  $('tab-short').classList.toggle('on', m==='short');
+  EX_IDS.forEach(id => { if(!SHORT_SET.includes(id)) enabled[id] = (m==='full'); });
+  LS.set('nt.enabled', enabled);
+  buildExList();
+}
+function syncSettings(){
+  $('s-hold').value = cfg.hold; $('v-hold').textContent = cfg.hold;
+  $('s-rest').value = cfg.rest; $('v-rest').textContent = cfg.rest;
+  $('s-reps').value = cfg.reps; $('v-reps').textContent = cfg.reps;
+  $('s-auto').checked  = cfg.auto;
+  $('s-sound').checked = cfg.sound;
+}
+function readSettings(){
+  cfg.hold = +$('s-hold').value; cfg.rest = +$('s-rest').value; cfg.reps = +$('s-reps').value;
+  cfg.auto = $('s-auto').checked; cfg.sound = $('s-sound').checked;
+  LS.set('nt.cfg', cfg); syncSettings();
+}
+
+/* ---------- session ---------- */
+function startSession(){
+  queue = EX_IDS.filter(id => enabled[id]);
+  if(!queue.length) return;
+  qi = 0; rep = 1; paused = false; startedAt = Date.now();
+  $('setup').classList.add('hidden');
+  $('complete').classList.add('hidden');
+  $('trainer').classList.remove('hidden');
+  buildDots(); renderExercise(); startExercise(); acquireWake();
+}
+function buildDots(){
+  const d = $('dots'); d.innerHTML = '';
+  queue.forEach((_,i) => { const s = document.createElement('div'); s.className='dot'; s.id='dt-'+i; d.appendChild(s); });
+}
+function renderExercise(){
+  const L = t(), id = queue[qi], [name, desc] = L.ex[id];
+  $('ex-num').textContent  = L.exOf.replace('{a}', qi+1).replace('{b}', queue.length);
+  $('ex-name').textContent = name;
+  $('ex-desc').textContent = desc;
+  $('ex-par').textContent  = L.params.replace('{r}',cfg.reps).replace('{h}',cfg.hold).replace('{p}',cfg.rest);
+  $('t-rep').textContent   = rep + '/' + cfg.reps;
+  $('b-prev').disabled = qi === 0;
+  $('b-next').disabled = qi === queue.length - 1;
+  queue.forEach((_,i) => {
+    const s = $('dt-'+i); if(s) s.className = 'dot' + (i<qi?' done' : i===qi?' act':'');
+  });
+}
+function paint(value, phaseLabel, cls, pct){
+  $('t-big').textContent   = value;
+  $('t-phase').textContent = phaseLabel;
+  const f = $('p-fill'); f.className = 'pfill ' + cls; f.style.width = Math.max(0,Math.min(100,pct)) + '%';
+}
+function startExercise(){
+  stopTimer();
+  phase = 'work'; elapsed = 0; paused = false;
+  $('b-pause').textContent = '⏸';
+  cueWork();
+  paint(cfg.hold, t().phWork, 'pw', 100);
+  timer = setInterval(tick, TICK);
+}
+function tick(){
+  if(paused) return;
+  elapsed += TICK;
+  const hold = cfg.hold*1000, rest = cfg.rest*1000;
+  if(phase === 'work'){
+    const left = hold - elapsed;
+    paint(Math.max(0, Math.ceil(left/1000)), t().phWork, 'pw', left/hold*100);
+    $('t-rep').textContent = rep + '/' + cfg.reps;
+    if(elapsed >= hold){
+      if(rep >= cfg.reps) return finishExercise();
+      phase = 'rest'; elapsed = 0; cueRest();
+    }
+  } else {
+    const left = rest - elapsed;
+    paint((left/1000).toFixed(1), t().phRest, 'pr', left/rest*100);
+    if(elapsed >= rest){ rep++; phase = 'work'; elapsed = 0; cueWork(); }
+  }
+}
+function finishExercise(){
+  stopTimer(); phase = 'done';
+  paint('✓', t().phDone, 'pw', 0);
+  cueDone();
+  if(qi < queue.length-1){
+    if(cfg.auto) setTimeout(() => { if(phase==='done') next(); }, 2000);
+  } else {
+    setTimeout(finishSession, 1100);
+  }
+}
+function next(){ if(qi>=queue.length-1) return; stopTimer(); qi++; rep=1; renderExercise(); startExercise(); }
+function prev(){ if(qi<=0) return; stopTimer(); qi--; rep=1; renderExercise(); startExercise(); }
+function resetExercise(){ stopTimer(); rep=1; renderExercise(); startExercise(); }
+function togglePause(){
+  if(phase==='idle'||phase==='done') return;
+  paused = !paused;
+  $('b-pause').textContent = paused ? '▶' : '⏸';
+}
+function stopTimer(){ if(timer){ clearInterval(timer); timer=null; } }
+function finishSession(){
+  stopTimer(); releaseWake(); logSession();
+  const secs = Math.round((Date.now()-startedAt)/1000);
+  $('c-exs').textContent  = queue.length;
+  $('c-time').textContent = Math.floor(secs/60) + ':' + String(secs%60).padStart(2,'0');
+  $('trainer').classList.add('hidden');
+  $('complete').classList.remove('hidden');
+}
+function toMenu(){
+  stopTimer(); releaseWake(); phase='idle';
+  $('complete').classList.add('hidden');
+  $('trainer').classList.add('hidden');
+  $('setup').classList.remove('hidden');
+}
+
+/* ---------- disclaimer ---------- */
+function showDisclaimer(){ $('disc').classList.remove('hidden'); $('b-disc').focus(); }
+function acceptDisclaimer(){ LS.set('nt.disclaimer', 1); $('disc').classList.add('hidden'); }
+
+/* ---------- wiring ---------- */
+document.querySelectorAll('.lang').forEach(b =>
+  b.addEventListener('click', () => { lang = b.dataset.l; LS.set('nt.lang', lang); applyLang(); }));
+$('tab-full').addEventListener('click',  () => setMode('full'));
+$('tab-short').addEventListener('click', () => setMode('short'));
+$('set-t').addEventListener('click', () => {
+  const p = $('set-p'), open = p.classList.contains('hidden');
+  p.classList.toggle('hidden', !open);
+  $('set-i').textContent = open ? '▾' : '▸';
+});
+['s-hold','s-rest','s-reps','s-auto','s-sound'].forEach(id =>
+  $(id).addEventListener('input', readSettings));
+$('btn-start').addEventListener('click', startSession);
+$('b-prev').addEventListener('click', prev);
+$('b-next').addEventListener('click', next);
+$('b-pause').addEventListener('click', togglePause);
+$('b-reset').addEventListener('click', resetExercise);
+$('b-again').addEventListener('click', startSession);
+$('b-menu').addEventListener('click', toMenu);
+$('b-disc').addEventListener('click', acceptDisclaimer);
+$('t-disclink').addEventListener('click', showDisclaimer);
+
+document.addEventListener('keydown', e => {
+  if($('trainer').classList.contains('hidden')) return;
+  const tag = ((e.target && e.target.tagName) || '').toLowerCase();
+  if(tag==='input' || tag==='textarea' || tag==='select') return;
+  if(e.code === 'Space'){ e.preventDefault(); togglePause(); }
+  else if(e.key === 'ArrowRight') next();
+  else if(e.key === 'ArrowLeft')  prev();
+  else if(e.key.toLowerCase() === 'r') resetExercise();
+});
+
+/* ---------- init ---------- */
+syncSettings();
+setMode(mode);
+applyLang();
+renderStats();
+if(!LS.get('nt.disclaimer', 0)) showDisclaimer();
+
+</script>
+</body>
+</html>
